@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="//js.jotform.com/widgets/userwidget.js"></script>
+    <style>
+        input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-family: sans-serif;
+        }
+        input.error { border: 2px solid #ff4d4d; }
+        .msg-error { color: #ff4d4d; font-size: 12px; display: none; margin-top: 5px; }
+    </style>
+</head>
+<body>
+    <input type="text" id="rut_input" placeholder="12.345.678-K">
+    <div id="error_text" class="msg-error">RUT no válido</div>
+
+    <script>
+        const input = document.getElementById('rut_input');
+        const errorDiv = document.getElementById('error_text');
+
+        // Función de validación (Módulo 11)
+        function validarRut(rut) {
+            let valor = rut.replace(/\./g, '').replace(/-/g, '').toUpperCase();
+            if (valor.length < 8) return false;
+            let cuerpo = valor.slice(0, -1);
+            let dv = valor.slice(-1);
+            let suma = 0; let multiplo = 2;
+            for (let i = cuerpo.length - 1; i >= 0; i--) {
+                suma += multiplo * cuerpo.charAt(i);
+                multiplo = (multiplo === 7) ? 2 : multiplo + 1;
+            }
+            let dvEsperado = 11 - (suma % 11);
+            if (dvEsperado === 11) dvEsperado = '0';
+            else if (dvEsperado === 10) dvEsperado = 'K';
+            return dv.toString() === dvEsperado.toString();
+        }
+
+        // Suscribirse a los eventos de Jotform
+        JotForm.subscribe("ready", function() {
+            input.addEventListener('input', function() {
+                const isValid = validarRut(this.value);
+                
+                if (this.value && !isValid) {
+                    input.classList.add('error');
+                    errorDiv.style.display = 'block';
+                } else {
+                    input.classList.remove('error');
+                    errorDiv.style.display = 'none';
+                }
+
+                // Enviamos el valor a Jotform
+                JotForm.sendData({
+                    value: this.value,
+                    valid: isValid
+                });
+            });
+        });
+    </script>
+</body>
+</html>
